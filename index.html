@@ -13,6 +13,23 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen">
 
+  <!-- 비밀번호 인증 모달 (최상위 독립 배치) -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+      <div class="text-center">
+        <i class="fa-solid fa-lock text-4xl text-indigo-600 mb-2"></i>
+        <h3 class="text-lg font-bold text-slate-800">관리자 인증</h3>
+        <p class="text-xs text-slate-500">교사 전용 페이지 접근을 위한 비밀번호를 입력하세요.</p>
+      </div>
+      <input type="password" id="admin-password" placeholder="비밀번호 (기본: 1234)"
+        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center font-bold">
+      <div class="flex gap-2">
+        <button onclick="closeAdminAuth()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl transition">취소</button>
+        <button onclick="verifyAdminAuth()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition">확인</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 상단 네비게이션 -->
   <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-30">
     <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -20,7 +37,7 @@
         <i class="fa-solid fa-comments text-2xl text-yellow-300"></i>
         <h1 class="text-xl font-bold tracking-tight">우리 반 언어 실태 조사</h1>
       </div>
-      <button id="nav-toggle-btn" onclick="toggleView()" class="bg-indigo-700 hover:bg-indigo-800 text-xs md:text-sm font-medium px-3 py-1.5 rounded-lg border border-indigo-400 transition flex items-center gap-2">
+      <button id="nav-toggle-btn" onclick="toggleView()" class="bg-indigo-700 hover:bg-indigo-800 text-xs md:text-sm font-medium px-3.5 py-2 rounded-xl border border-indigo-400 transition flex items-center gap-2">
         <i class="fa-solid fa-user-shield"></i>
         <span id="nav-toggle-text">교사/관리자 페이지</span>
       </button>
@@ -35,7 +52,7 @@
         <h2 class="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
           <i class="fa-solid fa-pen-to-square text-indigo-600"></i> 언어 실태 조사지 제출
         </h2>
-        <p class="text-slate-500 text-sm mb-6">자신이 조사한 항목을 선택하고 수집한 단어들을 자유롭게 입력해주세요.</p>
+        <p class="text-slate-500 text-sm mb-6">자신이 조사한 항목을 선택하고 수집한 단어들을 입력해주세요.</p>
 
         <form id="survey-form" onsubmit="handleFormSubmit(event)" class="space-y-6">
           
@@ -45,7 +62,7 @@
               <i class="fa-solid fa-id-card text-indigo-500 mr-1"></i> 학급 번호 (예: 6학년 1반 15번 → 60115)
             </label>
             <input type="number" id="student-num" placeholder="예: 60115" required
-              class="w-full md:w-1/2 px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+              class="w-full md:w-1/2 px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-base">
           </div>
 
           <!-- 조사 항목 선택 -->
@@ -77,21 +94,28 @@
             </div>
           </div>
 
-          <!-- 단어 입력 태그 시스템 -->
+          <!-- 단어 입력 태그 시스템 (태블릿 대응 [추가] 버튼 포함) -->
           <div>
             <label class="block text-sm font-semibold text-slate-700 mb-2">
-              <i class="fa-solid fa-list-check text-indigo-500 mr-1"></i> 조사한 단어 입력 (엔터, 쉼표, 띄어쓰기로 구분)
+              <i class="fa-solid fa-list-check text-indigo-500 mr-1"></i> 조사한 단어 입력
             </label>
-            <div class="border border-slate-300 rounded-xl p-3 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent bg-slate-50 min-h-[120px] transition">
-              <div id="tag-container" class="flex flex-wrap gap-2 mb-2"></div>
-              <input type="text" id="word-input" placeholder="단어를 입력하고 Enter 또는 스페이스바를 누르세요"
-                class="w-full bg-transparent focus:outline-none text-slate-800 text-sm py-1">
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="word-input" placeholder="단어 입력 후 [추가] 터치"
+                class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base">
+              <button type="button" onclick="addCurrentWord()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-3 rounded-xl transition flex items-center gap-1.5 shrink-0">
+                <i class="fa-solid fa-plus"></i> 추가
+              </button>
             </div>
-            <p class="text-xs text-slate-400 mt-1.5">* 추가된 단어 칩을 클릭하면 삭제할 수 있습니다.</p>
+            
+            <!-- 입력된 단어 칩 컨테이너 -->
+            <div class="border border-slate-200 rounded-xl p-3 bg-slate-50 min-h-[90px]">
+              <p class="text-xs text-slate-400 mb-2 font-medium">추가된 단어 목록 (터치하여 삭제):</p>
+              <div id="tag-container" class="flex flex-wrap gap-2"></div>
+            </div>
           </div>
 
           <!-- 제출 버튼 -->
-          <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-md flex justify-center items-center gap-2">
+          <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition shadow-md flex justify-center items-center gap-2 text-lg">
             <i class="fa-solid fa-paper-plane"></i> 조사 보고서 제출하기
           </button>
         </form>
@@ -102,23 +126,6 @@
     <!-- ================= 2. 관리자/교사 분석 대시보드 ================= -->
     <section id="admin-view" class="hidden space-y-6">
       
-      <!-- 비밀번호 인증 모달 -->
-      <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
-          <div class="text-center">
-            <i class="fa-solid fa-lock text-4xl text-indigo-600 mb-2"></i>
-            <h3 class="text-lg font-bold text-slate-800">관리자 인증</h3>
-            <p class="text-xs text-slate-500">교사 전용 페이지 접근을 위한 비밀번호를 입력하세요.</p>
-          </div>
-          <input type="password" id="admin-password" placeholder="비밀번호 입력 (기본: 1234)"
-            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center font-bold">
-          <div class="flex gap-2">
-            <button onclick="closeAdminAuth()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 rounded-xl transition">취소</button>
-            <button onclick="verifyAdminAuth()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl transition">확인</button>
-          </div>
-        </div>
-      </div>
-
       <!-- 대시보드 상단 요약 카드 -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
@@ -141,8 +148,8 @@
             <p class="text-xs text-slate-500 mt-1">실시간 새로고침 및 내보내기</p>
           </div>
           <div class="flex gap-2">
-            <button onclick="fetchData()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition" title="새로고침"><i class="fa-solid fa-rotate-right"></i></button>
-            <button onclick="exportCSV()" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition" title="CSV 다운로드"><i class="fa-solid fa-file-excel"></i></button>
+            <button onclick="fetchData()" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition" title="새로고침"><i class="fa-solid fa-rotate-right"></i></button>
+            <button onclick="exportCSV()" class="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition" title="CSV 다운로드"><i class="fa-solid fa-file-excel"></i></button>
           </div>
         </div>
       </div>
@@ -150,7 +157,7 @@
       <!-- 탭 컨트롤 & 카테고리 필터 -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
         <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-200 pb-4">
-          <div class="flex gap-2" id="filter-tabs">
+          <div class="flex gap-2 flex-wrap" id="filter-tabs">
             <button onclick="setFilter('전체')" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white" data-filter="전체">전체</button>
             <button onclick="setFilter('외래어')" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200" data-filter="외래어">외래어</button>
             <button onclick="setFilter('초성단어')" class="filter-btn px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200" data-filter="초성단어">초성단어</button>
@@ -226,8 +233,8 @@
 
   <script>
     // ================= [설정 및 상태 관리] =================
-    // ⚠️ 구글 앱스 스크립트 배포 후 얻은 Web App URL을 아래에 입력하세요.
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxhth4cO7NDjFTO4mpAznec0yZqh1kyrAdyMu-EZDTDl5owK0bnsGwDHDr1Rdx-QAn9/exec";
+    // ⚠️ 구글 앱스 스크립트 배포 URL을 입력하세요.
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwCAM3UIRcm3ak15tRl29hMkaW1V7ImGmo_CWX5ByzLopbfjDDsTcUSZoDlQk3irApJXA/exec";
     const ADMIN_PASSWORD_DEFAULT = "1234";
 
     let tags = [];
@@ -237,27 +244,43 @@
     let currentFilter = "전체";
     let isAdminAuthenticated = false;
 
-    // ================= [학생 페이지 - 태그 및 폼 제어] =================
+    // ================= [학생 페이지 - 입력 & 태그 제어] =================
     const tagContainer = document.getElementById('tag-container');
     const wordInput = document.getElementById('word-input');
 
+    // 키보드 엔터/쉼표 입력 및 포커스 해제 처리
     wordInput.addEventListener('keydown', function(e) {
       if (['Enter', ',', ' '].includes(e.key)) {
         e.preventDefault();
-        const val = this.value.trim().replace(/,/g, '');
-        if (val && !tags.includes(val)) {
-          tags.push(val);
-          renderTags();
-        }
-        this.value = '';
+        addCurrentWord();
       }
     });
+
+    wordInput.addEventListener('blur', function() {
+      addCurrentWord();
+    });
+
+    function addCurrentWord() {
+      const val = wordInput.value.trim().replace(/,/g, '');
+      if (val) {
+        // 공백 구분을 포함한 복수 입력 처리
+        const splitWords = val.split(/\s+/);
+        splitWords.forEach(w => {
+          const cleanWord = w.trim();
+          if (cleanWord && !tags.includes(cleanWord)) {
+            tags.push(cleanWord);
+          }
+        });
+        renderTags();
+      }
+      wordInput.value = '';
+    }
 
     function renderTags() {
       tagContainer.innerHTML = '';
       tags.forEach((tag, idx) => {
         const chip = document.createElement('span');
-        chip.className = 'inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg cursor-pointer hover:bg-rose-100 hover:text-rose-600 transition';
+        chip.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg cursor-pointer hover:bg-rose-100 hover:text-rose-600 transition';
         chip.innerHTML = `${tag} <i class="fa-solid fa-xmark text-xs"></i>`;
         chip.onclick = () => {
           tags.splice(idx, 1);
@@ -282,6 +305,8 @@
 
     async function handleFormSubmit(e) {
       e.preventDefault();
+      addCurrentWord(); // 제출 전 입력창에 남은 단어 변환
+
       const studentNum = document.getElementById('student-num').value.trim();
 
       if (!studentNum) return alert('학급 번호를 입력해주세요.');
@@ -300,9 +325,8 @@
 
       try {
         if (GAS_WEB_APP_URL.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
-          // 가상 테스트용
-          alert('웹 앱 URL이 설정되지 않아 브라우저 로컬 시뮬레이션으로 동작합니다.');
-          rawSurveyData.push({ timestamp: new Date(), studentNum, category: selectedCategory, words: tags });
+          alert('웹 앱 URL이 설정되지 않아 브라우저 로컬 시뮬레이션으로 저장됩니다.');
+          rawSurveyData.push({ timestamp: new Date().toLocaleString(), studentNum, category: selectedCategory, words: [...tags] });
         } else {
           await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
@@ -357,7 +381,12 @@
         isAdminAuthenticated = true;
         document.getElementById('auth-modal').classList.add('hidden');
         document.getElementById('admin-password').value = '';
-        toggleView();
+        
+        // 페이지 전환 실행
+        document.getElementById('student-view').classList.add('hidden');
+        document.getElementById('admin-view').classList.remove('hidden');
+        document.getElementById('nav-toggle-text').innerText = "학생 제출 페이지";
+        fetchData();
       } else {
         alert('비밀번호가 일치하지 않습니다.');
       }
@@ -395,7 +424,6 @@
     }
 
     function renderDashboard() {
-      // 1. 요약 통계
       const submittedStudents = [...new Set(rawSurveyData.map(d => d.studentNum))];
       document.getElementById('stat-students').innerText = `${submittedStudents.length} 명`;
 
@@ -404,7 +432,6 @@
         filteredRows = rawSurveyData.filter(d => d.category === currentFilter);
       }
 
-      // 단어 추출 및 빈도 계산 (숨겨진 단어 제외)
       const wordCounts = {};
       let totalWordCount = 0;
 
@@ -419,7 +446,7 @@
 
       document.getElementById('stat-words').innerText = `${totalWordCount} 개`;
 
-      // 2. 제출 학생 목록 렌더링
+      // 제출 학생 목록 렌더링
       const studentsListContainer = document.getElementById('submitted-students-list');
       studentsListContainer.innerHTML = '';
       if (submittedStudents.length === 0) {
@@ -427,13 +454,13 @@
       } else {
         submittedStudents.sort().forEach(s => {
           const badge = document.createElement('span');
-          badge.className = "px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-md";
+          badge.className = "px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-md";
           badge.innerText = `${s}번`;
           studentsListContainer.appendChild(badge);
         });
       }
 
-      // 3. 단어 필터링 관리 목록 렌더링 (모든 수집 단어 대상)
+      // 단어 필터링 관리 목록 렌더링
       const allUniqueWords = [...new Set(rawSurveyData.flatMap(d => d.words || []))];
       const filterListContainer = document.getElementById('word-filter-list');
       filterListContainer.innerHTML = '';
@@ -451,7 +478,7 @@
         filterListContainer.appendChild(chip);
       });
 
-      // 4. 순위 테이블 렌더링 (TOP 20)
+      // 순위 테이블 렌더링 (TOP 20)
       const sortedWords = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]);
       const tableBody = document.getElementById('rank-table-body');
       tableBody.innerHTML = '';
@@ -481,7 +508,7 @@
         });
       }
 
-      // 5. 워드 클라우드 그려주기
+      // 워드 클라우드 그려주기
       renderWordCloud(sortedWords);
     }
 
